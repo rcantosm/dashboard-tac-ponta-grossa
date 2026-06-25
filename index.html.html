@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário TAC (Previsto × Real) — SE Ponta Grossa | Engetécnica</title>
+<style>
+:root{--orange:#EE7203;--char:#2B2F36;--bg:#F4F5F7;--card:#fff;--line:#E4E7EB;--muted:#6B7280;
+--ok:#1E8E3E;--ok-d:#176B2F;--no:#FBE0E0;--no-d:#C62828;--prev:#EEF1F5;--prev-d:#90969E;
+--fim:#14642A;--fim-d:#0E4A1F;--miss:#FFE7D6;--miss-d:#C2660A;--late:#C62828}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--char);line-height:1.35;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1560px;margin:0 auto;padding:16px}
+header.top{background:var(--char);border-radius:14px 14px 0 0;color:#fff;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
+.brand .mark{width:12px;height:24px;background:var(--orange);border-radius:3px}
+.brand small{display:block;font-weight:500;font-size:11px;color:#B9BFC7}
+h1{font-size:13.5px;font-weight:600;color:#E7EAEE;flex:1;min-width:200px;text-transform:uppercase;letter-spacing:.4px}
+h1 b{color:var(--orange)}
+.today-badge{background:#41474F;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:#fff;display:flex;gap:7px;align-items:center}
+.today-badge .pip{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 3px rgba(238,114,3,.3)}
+.nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.btn{background:#41474F;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{background:#525964}.btn.print{background:var(--orange)}.btn.print:hover{background:#ff8420}
+.period{font-weight:800;font-size:15px;color:var(--orange);min-width:140px;text-align:center}
+.bar{background:var(--card);padding:11px 20px;border-left:1px solid var(--line);border-right:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px;font-size:11.5px;font-weight:600;cursor:pointer;color:#444;display:flex;align-items:center;gap:6px;transition:.15s}
+.chip .dot{width:9px;height:9px;border-radius:50%}.chip[data-active="1"]{outline:2px solid var(--orange);outline-offset:1px}.chip.all[data-active="1"]{background:var(--char);color:#fff}.chip:hover{transform:translateY(-1px)}
+.chip.gdone{background:#1B7A33;color:#fff;border-color:transparent}
+.chip.glate{background:#C62828;color:#fff;border-color:transparent}
+.legend{background:var(--card);border-left:1px solid var(--line);border-right:1px solid var(--line);border-top:1px solid var(--line);padding:9px 20px;display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);align-items:center}
+.leg{display:flex;align-items:center;gap:6px}.leg .sw{width:24px;height:14px;border-radius:4px;border-left:4px solid #999;display:inline-block}
+.hint{margin-left:auto;font-size:11.5px;color:#9aa0a8}
+.calwrap{background:var(--card);border:1px solid var(--line);border-radius:0 0 14px 14px;padding:14px 16px 18px;overflow-x:auto}
+.calgrid{display:grid;grid-template-columns:48px repeat(7,minmax(120px,1fr));gap:7px;min-width:980px}
+.hcell{font-size:11px;font-weight:700;color:var(--muted);text-align:center;letter-spacing:1px;padding:4px 0;align-self:end}
+.wknum{background:var(--char);color:#fff;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:13px;gap:1px}
+.wknum small{font-size:8px;font-weight:600;color:#AEB4BC;letter-spacing:.5px}
+.wknum.past{background:#C7CCD3}.wknum.past small{color:#EAECEF}
+.wknum.cur{background:var(--orange)}
+.cell{background:#FCFCFD;border:1px solid var(--line);border-radius:10px;min-height:108px;padding:6px 6px 7px;display:flex;flex-direction:column;gap:4px}
+.cell.out{background:#F7F8FA;opacity:.4}
+.cell.weekend{background:#EAF0F7}
+.cell.past{background:#F1F2F4}
+.cell.past.weekend{background:#E2E7EE}
+.cell.today{border:2px solid var(--orange);box-shadow:0 0 0 3px rgba(238,114,3,.14);background:#fff}
+.daynum{font-size:13px;font-weight:800;color:var(--char);display:flex;justify-content:space-between;align-items:center}
+.daynum .tg{font-size:9px;font-weight:800;color:#fff;background:var(--orange);padding:1px 6px;border-radius:6px;letter-spacing:.5px}
+.daynum .mtag{font-size:9.5px;font-weight:800;color:var(--orange)}
+.daynum.wk{color:#9aa0a8}
+.pills{display:flex;flex-direction:column;gap:3px}
+.pill{font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 6px 3px 7px;border-left:4px solid #999;cursor:pointer;display:flex;align-items:center;gap:5px;line-height:1.2;transition:.12s}
+.pill .ic{flex:none;font-size:9px;width:12px;text-align:center}
+.pill.fim .ic{font-size:12px;font-weight:700}
+.pill.n .ic{color:#D32029;font-weight:800;font-size:11px}
+.pill span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill.ok{background:var(--ok);color:#fff} .pill.n{background:var(--no)} .pill.prev{background:var(--prev)}
+.pill.fim{background:var(--fim);color:#fff} .pill.pend{background:var(--miss)}
+.pill:hover{filter:brightness(.97)}
+.dim{opacity:.16}
+.pill.late{background:var(--late)!important;border-left-color:#7d1414!important;color:#fff!important}
+.pill.late .ic{color:#fff}
+.hl{outline:2px solid var(--orange);outline-offset:1px}
+.hl.late{outline-color:#7d1414}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-top:12px;padding:11px 16px;display:none;align-items:center;gap:13px;flex-wrap:wrap}
+.detail.show{display:flex}.detail .tag{font-weight:800;color:#fff;padding:3px 10px;border-radius:6px;font-size:12px}
+.detail .nm{font-weight:700;font-size:14px}.detail .rg{color:var(--muted);font-size:13px}
+.detail .st{font-weight:800;font-size:12px;padding:3px 10px;border-radius:6px}
+.st.atras{background:#FBE0E0;color:#B71C1C}.st.dia{background:#E4F3E6;color:#1B5E20}.st.conc{background:#CDEBD3;color:#13632a}.st.prevst{background:#EEF1F5;color:#555}
+.detail .close{margin-left:auto;cursor:pointer;color:var(--muted);font-weight:700;font-size:13px;border:1px solid var(--line);padding:4px 10px;border-radius:7px}
+/* whatsapp */
+.wapp{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.wapp .wh{background:var(--char);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.wapp .wh h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#E7EAEE}
+.wapp .wh .cnt{background:var(--late);color:#fff;font-weight:800;font-size:12px;padding:2px 10px;border-radius:999px}
+.wapp .copy{margin-left:auto;background:#25D366;color:#063}
+.wapp .copy:hover{background:#1eb955}
+.wapp pre{margin:0;padding:16px 18px;font-family:'Consolas','Courier New',monospace;font-size:12.5px;line-height:1.6;white-space:pre-wrap;color:#1f2937;background:#FbFCFD;max-height:360px;overflow:auto}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media print{@page{size:A3 landscape;margin:7mm}body{background:#fff}.wrap{max-width:none;padding:0}
+.nav,.bar,.hint,.wapp .copy,.detail .close{display:none!important}
+header.top,.cell,.pill,.wknum,.chip,.daynum .tg,.wapp .wh{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.calgrid{min-width:0}.cell{min-height:0}header.top{border-radius:0}}
+@media(max-width:760px){h1{font-size:11px}.period{font-size:13px;min-width:104px}.calgrid{grid-template-columns:38px repeat(7,minmax(108px,1fr))}}
+</style></head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark"></span><div>ENGETÉCNICA<small>SE Ponta Grossa — ANANAÍ / TAESA · TAC</small></div></div>
+    <h1>Previsto × Real — <b>clique numa atividade p/ destacar (vermelho = atrasada)</b></h1>
+    <div class="today-badge"><span class="pip"></span><span id="todayTxt">Hoje</span></div>
+    <div class="nav">
+      <button class="btn" id="prev">← Mês ant.</button>
+      <span class="period" id="period">—</span>
+      <button class="btn" id="next">Próx. mês →</button>
+      <button class="btn print" id="print">🖨 A3</button>
+    </div>
+  </header>
+  <div class="bar"><div class="filters" id="filters" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div></div>
+  <div class="legend">
+    <div class="leg"><span class="sw" style="background:var(--ok);border-left-color:var(--ok-d)"></span>Trabalhou (OK)</div>
+    <div class="leg"><span class="sw" style="background:var(--no);border-left-color:var(--no-d)"></span>Não realizado (N)</div>
+    <div class="leg"><span class="sw" style="background:var(--miss);border-left-color:var(--miss-d)"></span>⚠ Previsto não preenchido</div>
+    <div class="leg"><span class="sw" style="background:var(--prev);border-left-color:var(--prev-d)"></span>Previsto (futuro)</div>
+    <div class="leg"><span class="sw" style="background:var(--fim);border-left-color:var(--fim-d)"></span>⚑ Concluída (F)</div>
+    <div class="leg"><span class="sw" style="background:var(--late);border-left-color:#7d1414"></span>Atrasada (selecionada)</div>
+    <div class="hint" id="summary"></div>
+  </div>
+  <div class="calwrap"><div class="calgrid" id="cal"></div>
+    <div class="detail" id="detail"></div>
+  </div>
+  <div class="wapp">
+    <div class="wh"><h2>Resumo de atrasos — mensagem WhatsApp</h2><span class="cnt" id="wcount">0</span>
+      <button class="btn copy" id="copy">📋 Copiar para WhatsApp</button></div>
+    <pre id="wtext"></pre>
+  </div>
+</div>
+<div class="toast" id="toast">Copiado!</div>
+<script>
+const DATA={"records": [{"id": 0, "group": "LT Assis C1", "gs": "LT-C1", "color": "#1F5FA8", "act": "Teste de Lógicas", "full": "Teste de Lógicas Controle", "pdays": ["2026-06-16", "2026-06-17"], "real": {"2026-06-16": "OK", "2026-06-17": "F"}, "ini": "2026-06-16", "fim": "2026-06-17"}, {"id": 1, "group": "LT Assis C1", "gs": "LT-C1", "color": "#1F5FA8", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-06-29", "2026-06-30"], "real": {}, "ini": "2026-06-29", "fim": "2026-06-30"}, {"id": 2, "group": "LT Assis C1", "gs": "LT-C1", "color": "#1F5FA8", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-07-01", "2026-07-02"], "real": {}, "ini": "2026-07-01", "fim": "2026-07-02"}, {"id": 3, "group": "LT Assis C1", "gs": "LT-C1", "color": "#1F5FA8", "act": "Teleproteção (P-a-P)", "full": "Teste Teleproteção (PONTA-A-PONTA)", "pdays": ["2026-07-14", "2026-07-15"], "real": {}, "ini": "2026-07-14", "fim": "2026-07-15"}, {"id": 4, "group": "Reator LT C1", "gs": "REA-C1", "color": "#2E8B57", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-06-22", "2026-06-23"], "real": {"2026-06-22": "N", "2026-06-23": "OK", "2026-06-24": "F"}, "ini": "2026-06-22", "fim": "2026-06-24"}, {"id": 5, "group": "Reator LT C1", "gs": "REA-C1", "color": "#2E8B57", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-06-23", "2026-06-24"], "real": {"2026-06-23": "N", "2026-06-24": "N", "2026-06-25": "OK"}, "ini": "2026-06-23", "fim": "2026-06-25"}, {"id": 6, "group": "Vão Central C1", "gs": "VC-C1", "color": "#16A085", "act": "Teste Funcional", "full": "Teste Funcional", "pdays": ["2026-06-18", "2026-06-19"], "real": {"2026-06-18": "OK", "2026-06-19": "F"}, "ini": "2026-06-18", "fim": "2026-06-19"}, {"id": 7, "group": "Vão Central C1", "gs": "VC-C1", "color": "#16A085", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-07-08"], "real": {}, "ini": "2026-07-08", "fim": "2026-07-08"}, {"id": 8, "group": "Vão Central C1", "gs": "VC-C1", "color": "#16A085", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-07-08"], "real": {}, "ini": "2026-07-08", "fim": "2026-07-08"}, {"id": 9, "group": "Vão Central C1", "gs": "VC-C1", "color": "#16A085", "act": "Integração GY/GZ/Reator", "full": "Integração GY / GZ / Reator", "pdays": ["2026-07-14", "2026-07-15", "2026-07-16"], "real": {}, "ini": "2026-07-14", "fim": "2026-07-16"}, {"id": 10, "group": "LT Assis C2", "gs": "LT-C2", "color": "#C0392B", "act": "Teste de Lógicas", "full": "Teste de Lógicas Controle", "pdays": ["2026-06-19", "2026-06-20"], "real": {"2026-06-19": "OK", "2026-06-20": "F"}, "ini": "2026-06-19", "fim": "2026-06-20"}, {"id": 11, "group": "LT Assis C2", "gs": "LT-C2", "color": "#C0392B", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-07-03", "2026-07-04"], "real": {}, "ini": "2026-07-03", "fim": "2026-07-04"}, {"id": 12, "group": "LT Assis C2", "gs": "LT-C2", "color": "#C0392B", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-07-06", "2026-07-07"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-07"}, {"id": 13, "group": "LT Assis C2", "gs": "LT-C2", "color": "#C0392B", "act": "Teleproteção (P-a-P)", "full": "Teste Teleproteção (PONTA-A-PONTA)", "pdays": ["2026-07-16", "2026-07-17"], "real": {}, "ini": "2026-07-16", "fim": "2026-07-17"}, {"id": 14, "group": "Reator LT C2", "gs": "REA-C2", "color": "#D35400", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-06-25", "2026-06-26"], "real": {"2026-06-25": "N"}, "ini": "2026-06-25", "fim": "2026-06-26"}, {"id": 15, "group": "Reator LT C2", "gs": "REA-C2", "color": "#D35400", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-06-26", "2026-06-27"], "real": {}, "ini": "2026-06-26", "fim": "2026-06-27"}, {"id": 16, "group": "Vão Central C2", "gs": "VC-C2", "color": "#8E44AD", "act": "Teste Funcional", "full": "Teste Funcional", "pdays": ["2026-06-22"], "real": {"2026-06-22": "N"}, "ini": "2026-06-22", "fim": "2026-06-22"}, {"id": 17, "group": "Vão Central C2", "gs": "VC-C2", "color": "#8E44AD", "act": "Subida de Pontos N2", "full": "Subida de Pontos N2", "pdays": ["2026-06-22"], "real": {"2026-06-22": "N"}, "ini": "2026-06-22", "fim": "2026-06-22"}, {"id": 18, "group": "Vão Central C2", "gs": "VC-C2", "color": "#8E44AD", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-07-09"], "real": {}, "ini": "2026-07-09", "fim": "2026-07-09"}, {"id": 19, "group": "Vão Central C2", "gs": "VC-C2", "color": "#8E44AD", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-07-09"], "real": {}, "ini": "2026-07-09", "fim": "2026-07-09"}, {"id": 20, "group": "Vão Central C2", "gs": "VC-C2", "color": "#8E44AD", "act": "Integração HY/HZ/Reator", "full": "Integração HY / HZ / Reator", "pdays": ["2026-07-16", "2026-07-17", "2026-07-18"], "real": {}, "ini": "2026-07-16", "fim": "2026-07-18"}, {"id": 21, "group": "Proteção de Barras 500kV", "gs": "BARRA", "color": "#2C3E50", "act": "Proteção/Oscilografia UPP", "full": "Teste de Proteção e Oscilografia UPP", "pdays": ["2026-06-27", "2026-06-28"], "real": {}, "ini": "2026-06-27", "fim": "2026-06-28"}, {"id": 22, "group": "Proteção de Barras 500kV", "gs": "BARRA", "color": "#2C3E50", "act": "Proteção/Oscilografia UPA", "full": "Teste de Proteção e Oscilografia UPA", "pdays": ["2026-06-27", "2026-06-28"], "real": {}, "ini": "2026-06-27", "fim": "2026-06-28"}, {"id": 23, "group": "Serv. Aux. PCSA", "gs": "PCSA", "color": "#B03A6E", "act": "Teste Funcional", "full": "Teste Funcional", "pdays": ["2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26"], "real": {"2026-06-23": "N", "2026-06-24": "N", "2026-06-25": "N"}, "ini": "2026-06-23", "fim": "2026-06-26"}, {"id": 24, "group": "Serv. Aux. PCSA", "gs": "PCSA", "color": "#B03A6E", "act": "Subida de Pontos N2", "full": "Subida de Pontos N2", "pdays": ["2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26"], "real": {"2026-06-23": "N", "2026-06-24": "N", "2026-06-25": "N"}, "ini": "2026-06-23", "fim": "2026-06-26"}, {"id": 25, "group": "Serv. Aux. CB1 (13,8kV)", "gs": "CB1", "color": "#8C6D1F", "act": "Teste Funcional", "full": "Teste Funcional", "pdays": ["2026-06-29", "2026-06-30", "2026-07-01"], "real": {}, "ini": "2026-06-29", "fim": "2026-07-01"}, {"id": 26, "group": "Serv. Aux. CB1 (13,8kV)", "gs": "CB1", "color": "#8C6D1F", "act": "Subida de Pontos N2", "full": "Subida de Pontos N2", "pdays": ["2026-06-29", "2026-06-30", "2026-07-01"], "real": {}, "ini": "2026-06-29", "fim": "2026-07-01"}, {"id": 27, "group": "Serv. Aux. CB1 (13,8kV)", "gs": "CB1", "color": "#8C6D1F", "act": "Teste Proteção", "full": "Teste Proteção", "pdays": ["2026-06-29", "2026-06-30", "2026-07-01"], "real": {}, "ini": "2026-06-29", "fim": "2026-07-01"}, {"id": 28, "group": "Telecom MUX-1", "gs": "MUX-1", "color": "#0E8A73", "act": "Teste Amplificador", "full": "Teste Amplificador", "pdays": ["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19"], "real": {"2026-06-15": "OK", "2026-06-16": "OK", "2026-06-17": "OK", "2026-06-18": "OK", "2026-06-19": "F"}, "ini": "2026-06-15", "fim": "2026-06-19"}, {"id": 29, "group": "Telecom MUX-1", "gs": "MUX-1", "color": "#0E8A73", "act": "Teste Multiplexador", "full": "Teste Multiplexador", "pdays": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-10"}, {"id": 30, "group": "Telecom MUX-2", "gs": "MUX-2", "color": "#5D6D7E", "act": "Teste Amplificador", "full": "Teste Amplificador", "pdays": ["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-19"], "real": {"2026-06-15": "OK", "2026-06-16": "OK", "2026-06-17": "OK", "2026-06-18": "OK", "2026-06-19": "F"}, "ini": "2026-06-15", "fim": "2026-06-19"}, {"id": 31, "group": "Telecom MUX-2", "gs": "MUX-2", "color": "#5D6D7E", "act": "Teste Multiplexador", "full": "Teste Multiplexador", "pdays": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-10"}, {"id": 32, "group": "Telecom OPLAT-3", "gs": "OPLAT-3", "color": "#7F8C00", "act": "Config. OPLAT", "full": "Preparação/Configuração OPLAT", "pdays": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-10"}, {"id": 33, "group": "Telecom OPLAT-3", "gs": "OPLAT-3", "color": "#7F8C00", "act": "Teste", "full": "Teste", "pdays": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-10"}, {"id": 34, "group": "Telecom OPLAT-4", "gs": "OPLAT-4", "color": "#A04000", "act": "Config. OPLAT", "full": "Preparação/Configuração OPLAT", "pdays": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-10"}, {"id": 35, "group": "Telecom OPLAT-4", "gs": "OPLAT-4", "color": "#A04000", "act": "Teste", "full": "Teste", "pdays": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"], "real": {}, "ini": "2026-07-06", "fim": "2026-07-10"}, {"id": 36, "group": "Integração ONS / COS-COR", "gs": "INT", "color": "#EE7203", "act": "Subida de Pontos ONS", "full": "Subida de Pontos ONS", "pdays": [], "real": {"2026-06-19": "F"}, "ini": "2026-06-19", "fim": "2026-06-19"}, {"id": 37, "group": "Integração ONS / COS-COR", "gs": "INT", "color": "#EE7203", "act": "Subida de Pontos ENGIE", "full": "Subida de Pontos ENGIE", "pdays": ["2026-06-24"], "real": {"2026-06-24": "F"}, "ini": "2026-06-24", "fim": "2026-06-24"}, {"id": 38, "group": "Integração ONS / COS-COR", "gs": "INT", "color": "#EE7203", "act": "Subida de Pontos N3 (COS/COR)", "full": "Subida de Pontos N3 COS/COR", "pdays": ["2026-07-01", "2026-07-02"], "real": {}, "ini": "2026-07-01", "fim": "2026-07-02"}, {"id": 39, "group": "Integração ONS / COS-COR", "gs": "INT", "color": "#EE7203", "act": "Comandos COS/COR", "full": "Teste Comandos COS / COR", "pdays": ["2026-07-03"], "real": {}, "ini": "2026-07-03", "fim": "2026-07-03"}], "meta": {"order": ["LT Assis C1", "Reator LT C1", "Vão Central C1", "LT Assis C2", "Reator LT C2", "Vão Central C2", "Proteção de Barras 500kV", "Serv. Aux. PCSA", "Serv. Aux. CB1 (13,8kV)", "Telecom MUX-1", "Telecom MUX-2", "Telecom OPLAT-3", "Telecom OPLAT-4", "Integração ONS / COS-COR"], "short": {"LT Assis C1": "LT-C1", "Reator LT C1": "REA-C1", "Vão Central C1": "VC-C1", "LT Assis C2": "LT-C2", "Reator LT C2": "REA-C2", "Vão Central C2": "VC-C2", "Proteção de Barras 500kV": "BARRA", "Serv. Aux. PCSA": "PCSA", "Serv. Aux. CB1 (13,8kV)": "CB1", "Telecom MUX-1": "MUX-1", "Telecom MUX-2": "MUX-2", "Telecom OPLAT-3": "OPLAT-3", "Telecom OPLAT-4": "OPLAT-4", "Integração ONS / COS-COR": "INT"}, "color": {"LT Assis C1": "#1F5FA8", "Reator LT C1": "#2E8B57", "Vão Central C1": "#16A085", "LT Assis C2": "#C0392B", "Reator LT C2": "#D35400", "Vão Central C2": "#8E44AD", "Proteção de Barras 500kV": "#2C3E50", "Serv. Aux. PCSA": "#B03A6E", "Serv. Aux. CB1 (13,8kV)": "#8C6D1F", "Telecom MUX-1": "#0E8A73", "Telecom MUX-2": "#5D6D7E", "Telecom OPLAT-3": "#7F8C00", "Telecom OPLAT-4": "#A04000", "Integração ONS / COS-COR": "#EE7203"}}, "today": "2026-06-25", "subtitle": "SE 500 kV Ponta Grossa — ANANAÍ"};
+const REC=DATA.records, ORDER=DATA.meta.order, COLOR=DATA.meta.color, SHORT=DATA.meta.short;
+const MES=['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+const MESS=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const DIAS=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const MONTHS=[{y:2026,m:5},{y:2026,m:6}];
+let cur=0, filter='all', selected=null;
+function pd(s){const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c);}
+function iso(d){return d.toISOString().slice(0,10);}
+function sameDay(a,b){return a.getFullYear()==b.getFullYear()&&a.getMonth()==b.getMonth()&&a.getDate()==b.getDate();}
+function fmt(s){const d=pd(s);return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+// today: live, normalized; fallback to data today
+let TODAY=new Date(); TODAY.setHours(0,0,0,0);
+const dataToday=pd(DATA.today);
+if(TODAY<pd('2026-06-15')||TODAY>pd('2026-07-26')) TODAY=dataToday;
+document.getElementById('todayTxt').textContent='Hoje: '+TODAY.toLocaleDateString('pt-BR');
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-dn+3);const f=new Date(Date.UTC(t.getUTCFullYear(),0,4));return 1+Math.round(((t-f)/86400000-3+((f.getUTCDay()+6)%7))/7);}
+
+function delayOf(r){
+  const today=TODAY;
+  const planned=r.pdays.map(pd);
+  const finished=Object.values(r.real).includes('F');
+  // dias previstos JÁ PASSADOS sem registro de OK/F = atraso real
+  const missedDays=planned.filter(d=>{if(d>=today)return false;const v=r.real[iso(d)];return v!=='OK'&&v!=='F';});
+  const worked=planned.filter(d=>{const v=r.real[iso(d)];return v==='OK'||v==='F';}).length;
+  const started=planned.length&&planned[0]<=today;
+  const delayed=(!finished)&&missedDays.length>0;
+  let days=0;
+  if(delayed){days=Math.round((today-missedDays[0])/86400000);}
+  let label= finished?'Concluída': delayed?'Atrasada': (started?(worked>0?'Em dia':'Prevista'):'Prevista');
+  let cls= finished?'conc': delayed?'atras': (label==='Em dia'?'dia':'prevst');
+  return {delayed,finished,started,days,worked,label,cls};
+}
+function dayStatus(r,k){
+  const v=r.real[k]; const planned=r.pdays.includes(k);
+  if(v==='F')return 'fim'; if(v==='OK')return 'ok'; if(v==='N')return 'n';
+  if(planned && pd(k)<TODAY) return 'pend';
+  if(planned) return 'prev';
+  return null;
+}
+const ICON={ok:'✓',n:'✕',fim:'⚑',pend:'⚠',prev:'◻'};
+function natureOf(r){
+  let nN=0,nBlank=0;
+  r.pdays.map(pd).forEach(d=>{if(d<TODAY){const v=r.real[iso(d)];if(v==='N')nN++;else if(v!=='OK'&&v!=='F')nBlank++;}});
+  return nN>0?'n':'blank';
+}
+
+function groupStatus(g){
+  const acts=REC.filter(r=>r.group===g);
+  if(!acts.length)return 'none';
+  const dels=acts.map(delayOf);
+  if(dels.some(d=>d.delayed))return 'late';
+  if(dels.every(d=>d.finished))return 'done';
+  return 'none';
+}
+function buildFilters(){
+  const fc=document.getElementById('filters');fc.innerHTML='';
+  const all=document.createElement('div');all.className='chip all';all.dataset.active=filter==='all'?'1':'0';
+  all.innerHTML='<span class="dot" style="background:#fff;border:1px solid #ccc"></span>TODAS';
+  all.onclick=()=>{filter='all';selected=null;render();};fc.appendChild(all);
+  ORDER.forEach(g=>{const c=document.createElement('div');
+    const gs=groupStatus(g);
+    c.className='chip'+(gs==='done'?' gdone':gs==='late'?' glate':'');c.dataset.active=filter===g?'1':'0';
+    c.innerHTML='<span class="dot" style="background:'+COLOR[g]+'"></span>'+SHORT[g];
+    c.title=g+' — '+(gs==='done'?'concluído':gs==='late'?'com atraso':'em andamento');
+    c.onclick=()=>{filter=(filter===g?'all':g);selected=null;render();};fc.appendChild(c);});
+}
+function render(){
+  buildFilters();
+  const {y,m}=MONTHS[cur];
+  document.getElementById('period').textContent=MES[m]+' '+y;
+  document.getElementById('prev').style.opacity=cur===0?.4:1;
+  document.getElementById('next').style.opacity=cur===MONTHS.length-1?.4:1;
+  const cal=document.getElementById('cal');cal.innerHTML='';
+  cal.appendChild(Object.assign(document.createElement('div'),{className:'hcell'}));
+  ['SEG','TER','QUA','QUI','SEX','SÁB','DOM'].forEach(d=>{const h=document.createElement('div');h.className='hcell';h.textContent=d;cal.appendChild(h);});
+  const first=new Date(y,m,1);const offset=(first.getDay()+6)%7;
+  let weekStart=new Date(y,m,1-offset);
+  const monthEnd=new Date(y,m+1,0);
+  while(weekStart<=monthEnd){
+    const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+    const wkPast=weekEnd<TODAY; const wkCur=(weekStart<=TODAY&&TODAY<=weekEnd);
+    const wk=document.createElement('div');wk.className='wknum'+(wkPast?' past':'')+(wkCur?' cur':'');
+    wk.innerHTML='<small>SEM</small>'+isoWeek(weekStart);cal.appendChild(wk);
+    for(let i=0;i<7;i++){
+      const dObj=new Date(weekStart);dObj.setDate(weekStart.getDate()+i);
+      const inMonth=dObj.getMonth()===m;const wd=(dObj.getDay()+6)%7;
+      const isToday=sameDay(dObj,TODAY);const isPast=dObj<TODAY&&!isToday;
+      const cell=document.createElement('div');
+      cell.className='cell'+(inMonth?'':' out')+(wd>=5?' weekend':'')+(isPast?' past':'')+(isToday?' today':'');
+      const dn=document.createElement('div');dn.className='daynum'+(wd>=5?' wk':'');
+      let right='';if(sameDay(dObj,TODAY))right='<span class="tg">HOJE</span>';else if(dObj.getDate()===1)right='<span class="mtag">'+MESS[dObj.getMonth()]+'</span>';
+      dn.innerHTML='<span>'+dObj.getDate()+'</span>'+right;cell.appendChild(dn);
+      if(inMonth){
+        const k=iso(dObj);const pills=document.createElement('div');pills.className='pills';
+        const items=[];
+        REC.forEach(r=>{if(filter!=='all'&&r.group!==filter)return;const st=dayStatus(r,k);if(st)items.push({r,st});});
+        items.sort((a,b)=>ORDER.indexOf(a.r.group)-ORDER.indexOf(b.r.group));
+        items.forEach(({r,st})=>{
+          const del=delayOf(r);const isSel=selected===r.id;
+          const p=document.createElement('div');
+          let cls='pill '+st;
+          if(isSel&&del.delayed)cls='pill late';
+          if(selected!==null&&!isSel)cls+=' dim';
+          if(isSel)cls+=' hl'+(del.delayed?' late':'');
+          p.className=cls;p.style.borderLeftColor=r.color;
+          p.innerHTML='<span class="ic">'+(ICON[st]||'')+'</span><span class="t">'+r.gs+' · '+r.act+'</span>';
+          p.title=r.group+' — '+r.full+' ('+fmt(r.ini)+'→'+fmt(r.fim)+') · '+del.label;
+          p.onclick=(e)=>{e.stopPropagation();selected=(selected===r.id?null:r.id);render();};
+          pills.appendChild(p);
+        });
+        cell.appendChild(pills);
+      }
+      cell.onclick=()=>{if(selected!==null){selected=null;render();}};
+      cal.appendChild(cell);
+    }
+    weekStart.setDate(weekStart.getDate()+7);
+  }
+  // summary count
+  const delayed=REC.filter(r=>delayOf(r).delayed);
+  document.getElementById('summary').textContent=delayed.length+' atrasada(s) · '+REC.length+' atividades · previsto×real';
+  showDetail();buildWhats();
+}
+function showDetail(){
+  const d=document.getElementById('detail');
+  if(selected===null){d.className='detail';d.innerHTML='';return;}
+  const r=REC.find(x=>x.id===selected);const del=delayOf(r);
+  d.className='detail show';
+  d.innerHTML='<span class="tag" style="background:'+r.color+'">'+r.gs+'</span>'+
+    '<span class="nm">'+r.full+'</span>'+
+    '<span class="st '+del.cls+'">'+del.label+(del.delayed?(' · '+del.days+' dia(s)'):'')+'</span>'+
+    '<span class="rg">Previsto: '+fmt(r.ini)+' → '+fmt(r.fim)+'</span>'+
+    '<span class="close" onclick="selected=null;render();">Limpar ✕</span>';
+}
+function buildWhats(){
+  const today=TODAY;
+  const delayed=REC.map(r=>({r,d:delayOf(r)})).filter(o=>o.d.delayed);
+  delayed.sort((a,b)=>ORDER.indexOf(a.r.group)-ORDER.indexOf(b.r.group)||pd(a.r.ini)-pd(b.r.ini));
+  const wd=DIAS[today.getDay()];const ds=today.toLocaleDateString('pt-BR');
+  let L=[];
+  L.push('*RELATÓRIO DE ATRASOS — '+wd+', '+ds+'*');
+  L.push('*'+DATA.subtitle+'*');
+  L.push('______________________________');
+  L.push('');
+  if(delayed.length===0){
+    L.push('✅ Nenhuma atividade atrasada em relação ao previsto.');
+  }else{
+    L.push('🔴 = atraso confirmado (N)   ·   ⚠️ = previsto não preenchido');
+    let lastG=null,n=0;
+    delayed.forEach(({r,d})=>{
+      if(r.group!==lastG){L.push('');L.push('*'+r.group+'*');lastG=r.group;}
+      n++;
+      const nat=natureOf(r);const sym=nat==='n'?'🔴':'⚠️';
+      const per=fmt(r.ini)+(r.ini!==r.fim?('–'+fmt(r.fim)):'');
+      L.push(sym+' '+n+') '+r.full+' — '+d.days+' dia(s) de atraso | previsto: '+per);
+    });
+    L.push('');
+    L.push('______________________________');
+    L.push('Total: '+delayed.length+' atividade(s) atrasada(s).');
+  }
+  L.push('_Engetécnica Engenharia e Construção_');
+  document.getElementById('wtext').textContent=L.join('\n');
+  document.getElementById('wcount').textContent=delayed.length;
+}
+document.getElementById('prev').onclick=()=>{if(cur>0){cur--;selected=null;render();}};
+document.getElementById('next').onclick=()=>{if(cur<MONTHS.length-1){cur++;selected=null;render();}};
+document.getElementById('print').onclick=()=>window.print();
+document.getElementById('copy').onclick=()=>{const t=document.getElementById('wtext').textContent;
+  navigator.clipboard.writeText(t).then(()=>{const e=document.getElementById('toast');e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600);});};
+// default to month containing today
+cur=MONTHS.findIndex(x=>x.y===TODAY.getFullYear()&&x.m===TODAY.getMonth());if(cur<0)cur=0;
+render();
+</script>
+</body></html>
